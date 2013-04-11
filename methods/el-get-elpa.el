@@ -178,14 +178,23 @@ DO-NOT-UPDATE will not update the package archive contents before running this."
     (mapc (lambda (pkg)
 	    (let* ((package (format "%s" (car pkg)))
 		   (pkg-desc (cdr pkg))
-		   (description (package-desc-doc pkg-desc)))
+		   (description (package-desc-doc pkg-desc))
+                   (reqs (package-desc-reqs pkg-desc))
+                   (depends (mapcar #'car reqs))
+                   (repo (assoc(aref pkg-desc (- (length pkg-desc) 1)) package-archives))
+                   )
+
               (with-temp-file (expand-file-name (concat package ".rcp")
 						target-dir)
 		(message "%s:%s" package description)
                 (insert
                  (format
-                  "(:name %s\n:auto-generated t\n:type elpa\n:description \"%s\")\n"
-                  package description))
+                  "(:name %s\n:auto-generated t\n:type elpa\n:description \"%s\"\n:repo %S\n"
+                  package description repo))
+                (if depends
+                    (insert
+                     (format ":depends %s\n)" depends))
+                  (insert ")"))
                 (indent-region (point-min) (point-max)))))
 	  package-archive-contents)))
 
